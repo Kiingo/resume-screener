@@ -1,0 +1,5 @@
+{
+  "__COMMENT": "For the reason we need this file, see https://stackoverflow.com/questions/72436192/why-am-i-getting-parseroptions-project-has-been-set-for-typescript-eslint-par",
+  "extends": "./tsconfig.json",
+  "exclude": ["node_modules", "dist", "cdk.out", "cdk.context", "build"]
+}
