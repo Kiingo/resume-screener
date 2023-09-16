@@ -9,7 +9,7 @@
       "name": "Index (ts)",
       "request": "launch",
       "command": "npx ts-node --transpile-only --prefer-ts-exts --experimental-specifier-resolution=node ./index.ts",
-      "cwd": "${workspaceFolder}/src",
+      "cwd": "${workspaceFolder}/app",
       "envFile": "${workspaceFolder}/.env",
       "outFiles": [],
       "resolveSourceMapLocations": null,

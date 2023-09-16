@@ -1,0 +1,7 @@
+.vs
+.vscode
+.github
+.prettierrc
+.eslintrc
+node_modules
+dist

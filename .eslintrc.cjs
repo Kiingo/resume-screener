@@ -1,23 +1,36 @@
 module.exports = {
-  root: true,
-  ignorePatterns: ['.eslintrc.js', 'jest.config.js'],
-  plugins: [
-    'prettier',
+  "root": true,
+  "ignorePatterns": ['.eslintrc.cjs'],
+  "parser": "@typescript-eslint/parser",
+  "parserOptions": {
+    "project": "./tsconfig.eslint.json",
+    "sourceType": "module"
+  },
+  "plugins": [
+    "@typescript-eslint",
+    "prettier",
+    "filename-rules",
+    "jest"
   ],
-  extends: [
-    'eslint:recommended',
-    'plugin:prettier/recommended',
-    'prettier',
+  "extends": [
+    "eslint:recommended",
+    "plugin:@typescript-eslint/eslint-recommended",
+    "plugin:@typescript-eslint/recommended",
+    "plugin:jest/recommended",
+    "plugin:jest/style",
+    "plugin:prettier/recommended",
+    "prettier"
   ],
-  rules: {
+  "rules": {
     "curly": "error",
     "no-self-compare": "error",
-    "no-empty-function": "warn",
+    "no-empty-function": "off",
     "no-constant-condition": ["error", { "checkLoops": false }],
-    "no-empty-interface": "warn",
+    "@typescript-eslint/no-empty-function": "warn",
+    "@typescript-eslint/no-empty-interface": "off",
     // Note: you must disable the base rule as it can report incorrect errors
-    'no-use-before-define': ["warn", { "variables": true, "functions": false, "classes": false }],
-    //"@typescript-eslint/no-use-before-define": ["warn", { "ignoreTypeReferences": true, "typedefs": false, "classes": false }],
+    "no-use-before-define": "off",
+    "@typescript-eslint/no-use-before-define": ["warn", { "ignoreTypeReferences": true, "typedefs": false, "classes": false }],
     "no-template-curly-in-string": "warn",
     "camelcase": "warn",
     "no-invalid-this": "warn",
@@ -41,7 +54,8 @@ module.exports = {
     // We'll make it so that unused-vars error is ignored if we prefix variable with underscore ("_")
     // https://stackoverflow.com/questions/64052318/how-to-disable-warn-about-some-unused-params-but-keep-typescript-eslint-no-un
     // We must disable the base rule as it can report incorrect errors if we don't
-    "no-unused-vars": [
+    "no-unused-vars": "off",
+    "@typescript-eslint/no-unused-vars": [
       "error", // or "warn"
       {
         "argsIgnorePattern": "^_",
@@ -49,7 +63,7 @@ module.exports = {
         "caughtErrorsIgnorePattern": "^_"
       }
     ],
-    "naming-convention": [
+    "@typescript-eslint/naming-convention": [
       "error",
       {
         "selector": "variable",
@@ -79,7 +93,8 @@ module.exports = {
         "prefix": ["I"]
       }
     ],
-    //"filename-rules/match": [2, /^(([a-z0-9][a-z0-9]*)([-_][a-z0-9]+)*\.?\\?)+$/], // kebab case with dots
-
-  },
-};
+    "filename-rules/match": [2, /^(([a-z0-9][a-z0-9]*)([-_][a-z0-9]+)*\.?\\?)+$/], // kebab case with dots
+    "jest/prefer-strict-equal": "error",
+    "jest/prefer-to-have-length": "warn"
+  }
+}
