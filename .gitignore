@@ -8,3 +8,4 @@ dist
 .npmrc.*
 .yarnrc
 .yarnrc.*
+local.settings.json
