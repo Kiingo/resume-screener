@@ -2,10 +2,11 @@ import typescript from 'rollup-plugin-typescript2';
 import resolve from '@rollup/plugin-node-resolve';
 import commonjs from '@rollup/plugin-commonjs';
 import obfuscator from 'rollup-plugin-obfuscator';
+import json from '@rollup/plugin-json'; // This plugin allows you to import JSON files in your TypeScript code
 
 const isProduction = process.env.NODE_ENV === 'production';
 export default {
-  input: 'src/index.ts',  // Replace with your entry TypeScript file
+  input: 'src/index.ts', // Replace with your entry TypeScript file
   output: [
     {
       file: 'dist/bundle.esm.js',
@@ -18,16 +19,17 @@ export default {
   ],
   plugins: [
     typescript({
-        tsconfig: isProduction ? './tsconfig.prod.json' : './tsconfig.dev.json',
+      tsconfig: isProduction ? './tsconfig.prod.json' : './tsconfig.dev.json'
     }),
     resolve(),
     commonjs({
-        sourceMap: !isProduction,
+      sourceMap: !isProduction
     }),
+    json(),
     obfuscator({
-			options: {
-				// Your javascript-obfuscator options here
-				// See what's allowed: https://github.com/javascript-obfuscator/javascript-obfuscator
+      options: {
+        // Your javascript-obfuscator options here
+        // See what's allowed: https://github.com/javascript-obfuscator/javascript-obfuscator
         controlFlowFlattening: true,
         controlFlowFlatteningThreshold: 1,
         numbersToExpressions: true,
@@ -35,7 +37,7 @@ export default {
         stringArrayShuffle: true,
         splitStrings: true,
         stringArrayThreshold: 1
-			},
-		}),
+      }
+    })
   ]
 };
