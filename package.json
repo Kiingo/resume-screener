@@ -33,7 +33,7 @@
       "pre-commit": "yarn run lint"
     }
   },
-  "name": "brain-common-ts-contracts",
+  "name": "@kiingo/brain-common-ts-contracts",
   "author": "Ross Hartmann",
   "module": "dist/brain-common-ts-contracts.esm.js",
   "size-limit": [
