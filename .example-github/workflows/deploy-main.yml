@@ -3,7 +3,7 @@ name: Deploy to npm
 on:
   push:
     branches:
-      - main  # or your default branch
+      - main # or your default branch
 
 jobs:
   build-and-publish:
@@ -14,82 +14,95 @@ jobs:
         os: [ubuntu-latest]
 
     steps:
-    - name: Check if NPM_AUTH_TOKEN is set
-      env:
-        NPM_AUTH_TOKEN: ${{ secrets.NPM_AUTH_TOKEN }}
-      run: |
-        if [[ -z "${NPM_AUTH_TOKEN}" ]]; then
-          echo "NPM_AUTH_TOKEN is NOT set";
-          exit 1;  # Exit the script with a non-zero status code to indicate failure
-        else
-          echo "NPM_AUTH_TOKEN is set";
-        fi
+      - name: Check if NPM_AUTH_TOKEN is set
+        env:
+          NPM_AUTH_TOKEN: ${{ secrets.NPM_AUTH_TOKEN }}
+        run: |
+          if [[ -z "${NPM_AUTH_TOKEN}" ]]; then
+            echo "NPM_AUTH_TOKEN is NOT set";
+            exit 1;  # Exit the script with a non-zero status code to indicate failure
+          else
+            echo "NPM_AUTH_TOKEN is set";
+          fi
 
+      - name: Checkout code
+        uses: actions/checkout@v2
 
-    - name: Checkout code
-      uses: actions/checkout@v2
+      - name: Install jq
+        run: sudo apt-get update && sudo apt-get install -y jq
 
-    - name: Install jq
-      run: sudo apt-get update && sudo apt-get install -y jq
+      - name: Read .nvmrc
+        id: nvm
+        run: echo "::set-output name=version::$(cat .nvmrc)"
 
-    - name: Read .nvmrc
-      id: nvm
-      run: echo "::set-output name=version::$(cat .nvmrc)"
-      
-    - name: Setup Node.js
-      uses: actions/setup-node@v2
-      with:
-        node-version: ${{ steps.nvm.outputs.version }}
-        registry-url: 'https://registry.npmjs.org'
+      - name: Setup Node.js
+        uses: actions/setup-node@v2
+        with:
+          node-version: ${{ steps.nvm.outputs.version }}
+          registry-url: 'https://registry.npmjs.org'
 
-    - name: Install dependencies
-      run: yarn install
-      env:
-        NODE_AUTH_TOKEN: ${{secrets.NPM_AUTH_TOKEN}}
+      - name: Install dependencies
+        run: yarn install
+        env:
+          NODE_AUTH_TOKEN: ${{secrets.NPM_AUTH_TOKEN}}
 
-    - name: Lint
-      run: yarn lint
+      - name: Lint
+        run: yarn lint
 
-    - name: Test
-      run: yarn test --ci --coverage --maxWorkers=2
+      - name: Test
+        run: yarn test --ci --coverage --maxWorkers=2
 
-    - name: Build package
-      run: yarn build  # or your build command
+      - name: Build package
+        run: yarn build # or your build command
 
-    - name: Run tests
-      run: yarn test  # or your test command
+      - name: Run tests
+        run: yarn test # or your test command
 
-    - name: Configure Git User
-      run: |
-        git config --local user.email "action@github.com"
-        git config --local user.name "GitHub Action"
+      - name: Configure Git User
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
 
-    - name: Bump package version
-      run: yarn version --patch # yarn version --minor  # yarn version --major
+      - name: Bump package version
+        run: yarn version --patch # yarn version --minor  # yarn version --major
 
-    - name: Stage Files and Commit changes
-      run: |
-        git add package.json || true
-        git commit -m "Bump package version" || true
+      - name: Stage Files and Commit changes
+        run: |
+          git add package.json || true
+          git commit -m "Bump package version" || true
 
-    - name: Check and Create Tag
-      run: |
-        if ! git rev-parse "v$(jq -r '.version' package.json)" >/dev/null 2>&1; then
-          git tag "v$(jq -r '.version' package.json)"
-          git push --tags
-        else
-          echo "Tag already exists. Not creating."
-        fi
+      - name: Check and Create Tag
+        run: |
+          if ! git rev-parse "v$(jq -r '.version' package.json)" >/dev/null 2>&1; then
+            git tag "v$(jq -r '.version' package.json)"
+            git push --tags
+          else
+            echo "Tag already exists. Not creating."
+          fi
 
-    # Make sure this pushes to the correct branch
-    # Note that GITHUB_TOKEN is a secret set by GitHub Actions, so you don't need to create your own
-    - name: Push changes
-      run: |
-        git push origin main 
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      # Make sure this pushes to the correct branch
+      # Note that GITHUB_TOKEN is a secret set by GitHub Actions, so you don't need to create your own
+      - name: Push changes
+        run: |
+          git push origin main
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-    - name: Publish package
-      run: yarn publish
-      env:
-        NODE_AUTH_TOKEN: ${{secrets.NPM_AUTH_TOKEN}}
+      - name: Set npm tag
+        id: set_tag
+        run: |
+          if [[ "${{ github.ref }}" == "refs/heads/development" ]]; then
+            echo "::set-output name=TAG::--tag development"
+          elif [[ "${{ github.ref }}" == "refs/heads/stage" ]]; then
+            echo "::set-output name=TAG::--tag stage"
+          else
+            echo "::set-output name=TAG::"
+          fi
+
+      # Install development via `yarn add @my-org/my-package@development`
+      # Install staging via `yarn add @my-org/my-package@stage`
+      # Install production via `yarn add @my-org/my-package`
+      - name: Publish package
+        run: yarn publish ${{ steps.set_tag.outputs.TAG }}
+        env:
+          NODE_AUTH_TOKEN: ${{secrets.NPM_AUTH_TOKEN}}
