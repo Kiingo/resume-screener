@@ -1,8 +1,21 @@
 {
   "version": "0.1.0",
-  "main": "dist/src/index.js",
+  "main": "dist/bundle.cjs.js",
+  "module": "dist/bundle.esm.js",
   "types": "dist/src/index.d.ts",
   "type": "module",
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./dist/src/index.d.ts",
+        "default": "./dist/bundle.esm.js"
+      },
+      "require": {
+        "types": "./dist/src/index.d.ts",
+        "default": "./dist/bundle.cjs.js"
+      }
+    }
+  },
   "publishConfig": {
     "access": "restricted"
   },
@@ -11,7 +24,7 @@
     "src"
   ],
   "engines": {
-    "node": ">=10"
+    "node": ">=18"
   },
   "scripts": {
     "build": "shx rm -rf ./dist && rollup -c",
@@ -35,7 +48,6 @@
   },
   "name": "@kiingo/brain-common-ts-contracts",
   "author": "Ross Hartmann",
-  "module": "dist/brain-common-ts-contracts.esm.js",
   "size-limit": [
     {
       "path": "dist/brain-common-ts-contracts.cjs.production.min.js",
