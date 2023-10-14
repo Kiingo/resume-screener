@@ -8,7 +8,7 @@
       "type": "node-terminal",
       "name": "Index (ts)",
       "request": "launch",
-      "command": "npx ts-node --transpile-only --prefer-ts-exts --experimental-specifier-resolution=node ./index.ts",
+      "command": "npx tsx ./index.ts",
       "cwd": "${workspaceFolder}/app",
       "envFile": "${workspaceFolder}/.env",
       "outFiles": [],
