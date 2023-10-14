@@ -22,8 +22,7 @@
     "access": "restricted"
   },
   "files": [
-    "dist",
-    "src"
+    "dist"
   ],
   "engines": {
     "node": ">=18"
