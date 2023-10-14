@@ -1,5 +1,7 @@
 {
   "version": "0.1.0",
+  "name": "@kiingo/brain-common-ts-contracts",
+  "author": "Ross Hartmann",
   "main": "./dist/bundle.cjs.js",
   "module": "./dist/bundle.esm.js",
   "types": "./dist/src/index.d.ts",
@@ -46,8 +48,6 @@
       "pre-commit": "yarn run lint"
     }
   },
-  "name": "@kiingo/brain-common-ts-contracts",
-  "author": "Ross Hartmann",
   "size-limit": [
     {
       "path": "dist/brain-common-ts-contracts.cjs.production.min.js",
