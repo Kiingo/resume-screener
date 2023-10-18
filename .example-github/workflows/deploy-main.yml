@@ -64,7 +64,13 @@ jobs:
           git config --local user.name "GitHub Action"
 
       - name: Bump package version
-        run: yarn version --patch # yarn version --minor  # yarn version --major
+        run: |
+          branch_name="${GITHUB_REF#refs/heads/}"  # Extract branch name from reference
+          if [[ "$branch_name" == "main" ]]; then
+            yarn version --minor
+          else
+            yarn version --patch
+          fi
 
       - name: Stage Files and Commit changes
         run: |
