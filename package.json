@@ -1,6 +1,7 @@
 {
   "version": "0.1.0",
   "name": "@kiingo/brain-common-ts-contracts",
+  "description": "",
   "author": "Ross Hartmann",
   "main": "./dist/bundle.cjs.js",
   "module": "./dist/bundle.esm.js",
