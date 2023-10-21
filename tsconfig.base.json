@@ -2,7 +2,8 @@
     "include": [
       "src",
       "types",
-      "app"
+      "app",
+      "rollup.config.ts"
     ],
     "compilerOptions": {
       "target": "ESNext",

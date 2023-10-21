@@ -3,19 +3,19 @@
   "name": "@kiingo/brain-common-ts-contracts",
   "description": "",
   "author": "Ross Hartmann",
-  "main": "./dist/bundle.cjs.js",
-  "module": "./dist/bundle.esm.js",
-  "types": "./dist/src/index.d.ts",
+  "main": "./dist/cjs/index.js",
+  "module": "./dist/esm/index.js",
+  "types": "./dist/esm/src/index.d.ts",
   "type": "module",
   "exports": {
     ".": {
       "import": {
-        "types": "./dist/src/index.d.ts",
-        "default": "./dist/bundle.esm.js"
+        "types": "./dist/esm/src/index.d.ts",
+        "default": "./dist/esm/index.js"
       },
       "require": {
-        "types": "./dist/src/index.d.ts",
-        "default": "./dist/bundle.cjs.js"
+        "types": "./dist/cjs/src/index.d.ts",
+        "default": "./dist/cjs/index.js"
       }
     }
   },
@@ -29,7 +29,7 @@
     "node": ">=18"
   },
   "scripts": {
-    "build": "shx rm -rf ./dist && rollup -c",
+    "build": "shx rm -rf ./dist && rollup -c --configPlugin @rollup/plugin-typescript",
     "build:dev": "cross-env NODE_ENV=development yarn run build",
     "build:prod": "cross-env NODE_ENV=production yarn run build",
     "test": "node --experimental-vm-modules ./node_modules/jest-cli/bin/jest.js --passWithNoTests --config ./jest.config.ts --detectOpenHandles --forceExit",
@@ -62,6 +62,8 @@
     "@rollup/plugin-commonjs": "^25.0.4",
     "@rollup/plugin-json": "^6.0.1",
     "@rollup/plugin-node-resolve": "^15.2.1",
+    "@rollup/plugin-terser": "^0.4.4",
+    "@rollup/plugin-typescript": "^11.1.5",
     "@size-limit/preset-small-lib": "^9.0.0",
     "@types/jest": "^29.5.5",
     "@types/node": "^20.6.2",

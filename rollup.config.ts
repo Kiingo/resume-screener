@@ -3,28 +3,41 @@ import resolve from '@rollup/plugin-node-resolve';
 import commonjs from '@rollup/plugin-commonjs';
 import obfuscator from 'rollup-plugin-obfuscator';
 import json from '@rollup/plugin-json'; // This plugin allows you to import JSON files in your TypeScript code
+import terser from '@rollup/plugin-terser';
+import { RollupOptions } from 'rollup';
 
 const isProduction = process.env.NODE_ENV === 'production';
 export default {
   input: 'src/index.ts', // Replace with your entry TypeScript file
   output: [
     {
-      file: 'dist/bundle.esm.js',
-      format: 'esm'
+      file: 'dist/esm/index.js',
+      format: 'esm',
+      sourcemap: !isProduction
     },
     {
-      file: 'dist/bundle.cjs.js',
-      format: 'cjs'
+      file: 'dist/cjs/index.js',
+      format: 'cjs',
+      sourcemap: !isProduction
     }
   ],
   plugins: [
     typescript({
       tsconfig: isProduction ? './tsconfig.prod.json' : './tsconfig.dev.json'
     }),
-    resolve(),
+    {
+      name: 'add-environment-variables',
+      renderChunk(code, chunk, options) {
+        if (chunk.fileName === 'index.js') {
+          return `process.env.IS_BUNDLED='true';\n` + code;
+        }
+        return code;
+      }
+    },
     commonjs({
       sourceMap: !isProduction
     }),
+    resolve(),
     json(),
     obfuscator({
       options: {
@@ -38,6 +51,9 @@ export default {
         splitStrings: true,
         stringArrayThreshold: 1
       }
+    }),
+    terser({
+      maxWorkers: 4
     })
   ]
-};
+} as RollupOptions;
