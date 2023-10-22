@@ -32,6 +32,7 @@
     "build": "shx rm -rf ./dist && rollup -c --configPlugin @rollup/plugin-typescript",
     "build:dev": "cross-env NODE_ENV=development yarn run build",
     "build:prod": "cross-env NODE_ENV=production yarn run build",
+    "relink-kiingo-packages": "shx rm -rf ./node_modules/@kiingo && rm -rf ./yarn.lock && yarn install",
     "test": "node --experimental-vm-modules ./node_modules/jest-cli/bin/jest.js --passWithNoTests --config ./jest.config.ts --detectOpenHandles --forceExit",
     "test-debug": "node --experimental-vm-modules ./node_modules/jest-cli/bin/jest.js --passWithNoTests --config ./jest.config.ts --runInBand --detectOpenHandles",
     "lint": "eslint . --ext .ts --config ./.eslintrc.cjs --ignore-path ./.eslintignore",
