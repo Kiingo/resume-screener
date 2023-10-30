@@ -32,7 +32,6 @@
     "build": "shx rm -rf ./dist && rollup -c --configPlugin @rollup/plugin-typescript",
     "build:dev": "cross-env NODE_ENV=development yarn run build",
     "build:prod": "cross-env NODE_ENV=production yarn run build",
-    "relink-kiingo-packages": "shx rm -rf ./node_modules/@kiingo && rm -rf ./yarn.lock && yarn install",
     "test": "node --experimental-vm-modules ./node_modules/jest-cli/bin/jest.js --passWithNoTests --config ./jest.config.ts --detectOpenHandles --forceExit",
     "test-debug": "node --experimental-vm-modules ./node_modules/jest-cli/bin/jest.js --passWithNoTests --config ./jest.config.ts --runInBand --detectOpenHandles",
     "lint": "eslint . --ext .ts --config ./.eslintrc.cjs --ignore-path ./.eslintignore",
@@ -41,7 +40,15 @@
     "prettier-fix": "prettier --config ./.prettierrc --ignore-path ./.prettierignore --write .",
     "prepare": "yarn run build",
     "size": "size-limit",
-    "analyze": "size-limit --why"
+    "analyze": "size-limit --why",
+    "relink-kiingo-packages": "shx rm -rf ./node_modules/@kiingo && rm -rf ./yarn.lock && yarn install",
+    "update:brain-db-orm": "yarn remove @kiingo/brain-db-orm && yarn add @kiingo/brain-db-orm@develop",
+    "update:brain-common-ts-contracts": "yarn remove @kiingo/brain-common-ts-contracts && yarn add @kiingo/brain-common-ts-contracts@develop",
+    "update:brain-data-connector": "yarn remove @kiingo/brain-data-connector && yarn add @kiingo/brain-data-connector@develop",
+    "update:brain-ts-utils": "yarn remove @kiingo/brain-ts-utils && yarn add @kiingo/brain-ts-utils@develop",
+    "update:brain-auth-utils": "yarn remove @kiingo/brain-auth-utils && yarn add @kiingo/brain-auth-utils@develop",
+    "update:brain-cloud-utils": "yarn remove @kiingo/brain-cloud-utils && yarn add @kiingo/brain-cloud-utils@develop",
+    "update:kiingo-packages": "yarn update:brain-db-orm && yarn update:brain-common-ts-contracts && yarn update:brain-data-connector && yarn update:brain-ts-utils && yarn update:brain-auth-utils && yarn update:brain-cloud-utils"
   },
   "peerDependencies": {},
   "husky": {
