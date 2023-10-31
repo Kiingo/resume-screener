@@ -31,6 +31,10 @@ jobs:
       - name: Install jq
         run: sudo apt-get update && sudo apt-get install -y jq
 
+      - name: Get package name
+        id: package
+        run: echo "::set-output name=package_name::$(jq -r '.name' package.json)"
+
       - name: Read .nvmrc
         id: nvm
         run: echo "::set-output name=version::$(cat .nvmrc)"
@@ -120,3 +124,13 @@ jobs:
         with:
           name: yarn-error-log
           path: ${{ github.workspace }}/yarn-error.log
+
+      - name: Notify Teams on Success
+        if: success()
+        run: |
+          curl -H "Content-Type: application/json" -d "{'text':'**SUCCESS**: GitHub Action for **${{ steps.package.outputs.package_name }}**!\n\n\n\nyarn upgrade @kiingo/${{ steps.package.outputs.package_name }}@develop --latest\n\nyarn add @kiingo/${{ steps.package.outputs.package_name }}@develop --latest'}" https://kiingo.webhook.office.com/webhookb2/3b9522e6-db21-4800-ae3b-10883a968c0d@3205e88e-b728-4ab3-82ff-18e148cad4c4/IncomingWebhook/4808ec8ffe3045808aef46e769e3ec68/80f48d03-40c0-4803-b873-ffb554c56e9a
+
+      - name: Notify Teams on Failure
+        if: failure()
+        run: |
+          curl -H "Content-Type: application/json" -d "{'text':'**FAILURE**: GitHub Action for **${{ steps.package.outputs.package_name }}**!'}" https://kiingo.webhook.office.com/webhookb2/3b9522e6-db21-4800-ae3b-10883a968c0d@3205e88e-b728-4ab3-82ff-18e148cad4c4/IncomingWebhook/4808ec8ffe3045808aef46e769e3ec68/80f48d03-40c0-4803-b873-ffb554c56e9a
