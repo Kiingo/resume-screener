@@ -9,7 +9,9 @@ const runCommand = async (command: string) => {
   try {
     const { stdout, stderr } = await execAsync(command);
     consola.log(stdout);
-    consola.error(stderr);
+    if (stderr?.length) {
+      consola.error(stderr);
+    }
   } catch (error) {
     consola.error(`Error executing command: ${error}`);
     throw error;
