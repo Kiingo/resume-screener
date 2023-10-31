@@ -62,8 +62,7 @@
     "git:push": "yarn run git:command push",
     "git:rebase": "yarn run git:pull:rebase",
     "git:rebase:push": "yarn run git:command rebase-push",
-    "git:publish": "yarn run git:commit:push",
-    "publish": "yarn run lint && yarn run build:prod && yarn run test && yarn run prettier-check && yarn run git:publish "
+    "git:publish": "yarn run lint && yarn run build:prod && yarn run test && yarn run prettier-check && yarn run git:commit:push "
   },
   "peerDependencies": {},
   "husky": {
