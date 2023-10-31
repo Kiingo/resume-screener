@@ -2,5 +2,5 @@
   "__COMMENT": "For the reason we need this file, see https://stackoverflow.com/questions/72436192/why-am-i-getting-parseroptions-project-has-been-set-for-typescript-eslint-par",
   "extends": "./tsconfig.dev.json",
   "exclude": ["node_modules", "dist"],
-  "include": ["src", "types", "app", "test"]
+  "include": ["src", "types", "app", "test", "scripts"]
 }

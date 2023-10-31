@@ -1,7 +1,7 @@
 {
-    "extends": "./tsconfig.base.json",
-    "compilerOptions": {
-      "inlineSourceMap": true
-      // Any dev-specific options
-    }
+  "extends": "./tsconfig.base.json",
+  "compilerOptions": {
+    "inlineSourceMap": true
+    // Any dev-specific options
   }
+}

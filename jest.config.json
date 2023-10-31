@@ -13,11 +13,14 @@
   ],
   "extensionsToTreatAsEsm": [".ts", ".d.ts"],
   "transform": {
-    "^.+\\.(ts|tsx)?$": ["ts-jest", {
-      "useESM": true,
-      "supportsStaticESM": true,
-      "sourceType": "module"
-    }],
+    "^.+\\.(ts|tsx)?$": [
+      "ts-jest",
+      {
+        "useESM": true,
+        "supportsStaticESM": true,
+        "sourceType": "module"
+      }
+    ],
     "^.+\\.(js|jsx)$": "babel-jest"
   },
   "setupFiles": ["<rootDir>/test/jest-setup.ts"],
