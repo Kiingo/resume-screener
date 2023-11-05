@@ -102,6 +102,15 @@ const commit = async (commitMessage: string): Promise<boolean> => {
     }
   }
 
+  if (
+    staged.added.length <= 0 &&
+    staged.modified.length <= 0 &&
+    staged.deleted.length <= 0
+  ) {
+    consola.log('No files staged for commit.');
+    return true;
+  }
+
   consola.log('Committing changes...');
   await runCommand(`git commit -m "${commitMessage}"`);
   consola.success(`Successfully committed changes.`);
