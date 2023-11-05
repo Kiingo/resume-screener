@@ -1,6 +1,6 @@
 {
   "version": "0.1.0",
-  "name": "@kiingo/brain-common-ts-contracts",
+  "name": "@kiingo/insert-package-name-here",
   "description": "",
   "author": "Ross Hartmann",
   "main": "./dist/cjs/index.js",
