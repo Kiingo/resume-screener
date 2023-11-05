@@ -2,6 +2,7 @@
 import { exec } from 'child_process';
 import { promisify } from 'util';
 import consola from 'consola';
+import prompts from 'prompts';
 
 const execAsync = promisify(exec);
 
@@ -21,6 +22,28 @@ const runCommand = async (command: string) => {
 const listStagedFiles = async () => {
   consola.log('Showing files staged for commit...');
   const { stdout } = await execAsync('git status --porcelain');
+  const lines = stdout.split('\n');
+
+  const files: {
+    added: string[];
+    modified: string[];
+    deleted: string[];
+  } = {
+    added: [],
+    modified: [],
+    deleted: []
+  };
+
+  for (const line of lines) {
+    if (line.startsWith('A ')) {
+      files.added.push(line.substring(3));
+    } else if (line.startsWith('M ')) {
+      files.modified.push(line.substring(3));
+    } else if (line.startsWith('D ')) {
+      files.deleted.push(line.substring(3));
+    }
+  }
+
   const stagedFiles = stdout
     .split('\n')
     .filter((line) => line.startsWith('A ') || line.startsWith('M '));
@@ -30,6 +53,7 @@ const listStagedFiles = async () => {
   } else {
     consola.log('No files staged for commit.');
   }
+  return files;
 };
 const listUnstagedFiles = async () => {
   consola.log('Showing files unstaged for commit...');
@@ -51,14 +75,38 @@ const unstage = async () => {
   await listUnstagedFiles();
   consola.success(`Successfully unstaged all files.`);
 };
-const commit = async (commitMessage: string) => {
+const commit = async (commitMessage: string): Promise<boolean> => {
   if (!commitMessage?.length) {
     throw new Error('Commit message is required.');
   }
   await stage();
+
+  const staged = await listStagedFiles();
+  if (staged.deleted.length > 0) {
+    // Ask user to confirm deletion of files
+    consola.warn(
+      `The following files will be deleted in this commit:\n${staged.deleted.join(
+        '\n'
+      )}`
+    );
+
+    const { confirm } = await prompts({
+      type: 'confirm',
+      name: 'confirm',
+      message: 'Are you sure you want to delete these files?',
+      initial: false
+    });
+    if (!confirm) {
+      consola.log('Aborting commit.');
+      return false;
+    }
+  }
+
   consola.log('Committing changes...');
   await runCommand(`git commit -m "${commitMessage}"`);
   consola.success(`Successfully committed changes.`);
+
+  return true;
 };
 const pullMerge = async () => {
   consola.log('Pulling latest changes from remote...');
@@ -80,12 +128,16 @@ const rebasePush = async () => {
   await push();
 };
 
-const commitRebasePush = async (commitMessage: string) => {
-  await commit(commitMessage);
+const commitRebasePush = async (commitMessage: string): Promise<boolean> => {
+  const didCommit = await commit(commitMessage);
+  if (!didCommit) {
+    return false;
+  }
 
   await pullRebase();
 
   await push();
+  return true;
 };
 
 const main = async () => {
