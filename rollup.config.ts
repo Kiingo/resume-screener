@@ -4,41 +4,32 @@ import commonjs from '@rollup/plugin-commonjs';
 import obfuscator from 'rollup-plugin-obfuscator';
 import json from '@rollup/plugin-json'; // This plugin allows you to import JSON files in your TypeScript code
 import terser from '@rollup/plugin-terser';
-import { RollupOptions } from 'rollup';
+import { InputPluginOption, RollupOptions } from 'rollup';
 
 const isProduction = process.env.NODE_ENV === 'production';
-export default {
-  input: 'src/index.ts', // Replace with your entry TypeScript file
-  output: [
-    {
-      file: 'dist/esm/index.js',
-      format: 'esm',
-      sourcemap: !isProduction
-    },
-    {
-      file: 'dist/cjs/index.js',
-      format: 'cjs',
-      sourcemap: !isProduction
-    }
-  ],
-  plugins: [
-    typescript({
-      tsconfig: isProduction ? './tsconfig.prod.json' : './tsconfig.dev.json'
-    }),
-    {
-      name: 'add-environment-variables',
-      renderChunk(code, chunk, options) {
-        if (chunk.fileName === 'index.js') {
-          return `process.env.IS_BUNDLED='true';\n` + code;
-        }
-        return code;
+
+let plugins: InputPluginOption[] = [
+  typescript({
+    tsconfig: isProduction ? './tsconfig.prod.json' : './tsconfig.dev.json'
+  }),
+  {
+    name: 'add-environment-variables',
+    renderChunk(code, chunk, options) {
+      if (chunk.fileName === 'index.js') {
+        return `process.env.IS_BUNDLED='true';\n` + code;
       }
-    },
-    commonjs({
-      sourceMap: !isProduction
-    }),
-    resolve(),
-    json(),
+      return code;
+    }
+  },
+  commonjs({
+    sourceMap: !isProduction
+  }),
+  resolve(),
+  json()
+];
+
+if (isProduction) {
+  plugins = plugins.concat([
     obfuscator({
       options: {
         // Your javascript-obfuscator options here
@@ -55,5 +46,25 @@ export default {
     terser({
       maxWorkers: 4
     })
-  ]
+  ]);
+}
+
+const options = {
+  input: 'src/index.ts', // Replace with your entry TypeScript file
+  output: [
+    {
+      file: 'dist/esm/index.js',
+      format: 'esm',
+      sourcemap: !isProduction
+    },
+    {
+      file: 'dist/cjs/index.js',
+      format: 'cjs',
+      sourcemap: !isProduction
+    }
+  ],
+  external: [],
+  plugins: plugins
 } as RollupOptions;
+
+export default options;

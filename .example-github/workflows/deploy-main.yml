@@ -58,7 +58,13 @@ jobs:
         run: yarn test --ci --coverage --maxWorkers=2
 
       - name: Build package
-        run: yarn build # or your build command
+        run: |
+          branch_name="${GITHUB_REF#refs/heads/}"  # Extract branch name from reference
+          if [[ "$branch_name" == "main" ]] || [[ "$branch_name" == "stage" ]]; then
+            yarn run build:prod
+          else
+            yarn run build:dev
+          fi
 
       - name: Run tests
         run: yarn test # or your test command
