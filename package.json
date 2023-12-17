@@ -48,6 +48,8 @@
     "update:brain-ts-utils": "yarn remove @kiingo/brain-ts-utils && yarn add @kiingo/brain-ts-utils@develop",
     "update:brain-auth-utils": "yarn remove @kiingo/brain-auth-utils && yarn add @kiingo/brain-auth-utils@develop",
     "update:brain-cloud-utils": "yarn remove @kiingo/brain-cloud-utils && yarn add @kiingo/brain-cloud-utils@develop",
+    "update:brain-text-utils": "yarn remove @kiingo/brain-text-utils && yarn add @kiingo/brain-text-utils@develop",
+    "update:brain-llm-utils": "yarn remove @kiingo/brain-llm-utils && yarn add @kiingo/brain-llm-utils@develop",
     "update:brain-container-utils": "yarn remove @kiingo/brain-container-utils && yarn add @kiingo/brain-container-utils@develop",
     "update:kiingo-packages": "yarn update:brain-db-orm && yarn update:brain-common-ts-contracts && yarn update:brain-data-connector && yarn update:brain-ts-utils && yarn update:brain-auth-utils && yarn update:brain-cloud-utils && yarn update:brain-container-utils",
     "git:command": "npx tsx ./scripts/git-ops.ts",
