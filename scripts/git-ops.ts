@@ -189,7 +189,14 @@ const refreshPackages = async ({ forceUpdate }: { forceUpdate: boolean }) => {
       // Iterate through dependencies
       for (const key of Object.keys(packageJson.dependencies)) {
         if (key.startsWith('@kiingo/')) {
-          const currentVersion = packageJson.dependencies[key];
+          let currentVersion = packageJson.dependencies[key];
+          // Remove any leading ^ or ~
+          if (
+            currentVersion.startsWith('^') ||
+            currentVersion.startsWith('~')
+          ) {
+            currentVersion = currentVersion.substring(1);
+          }
           consola.log(`Found Kiingo package: ${key}`);
 
           let targetVersion = '';
