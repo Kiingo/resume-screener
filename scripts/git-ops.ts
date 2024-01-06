@@ -1,9 +1,9 @@
 /* eslint-disable no-console */
 import { exec } from 'child_process';
-import { promisify } from 'util';
 import consola from 'consola';
-import prompts from 'prompts';
 import fs from 'fs';
+import prompts from 'prompts';
+import { promisify } from 'util';
 
 const execAsync = promisify(exec);
 
@@ -30,7 +30,8 @@ const runCommand = async (
       consola.info(`StdErr: ${stderr}`);
     }
     return true;
-  } catch (error) {
+  } catch (e) {
+    const error = e as Error;
     consola.error(`Error executing command: ${error}`);
     options.onError?.(error);
 
@@ -364,13 +365,22 @@ const refreshPackages = async ({ forceUpdate }: { forceUpdate: boolean }) => {
           if (!versionDependencies[dependencyName]) {
             versionDependencies[dependencyName] = [];
           }
-          if (!versionDependencies[dependencyName][dependencyVersion]) {
-            versionDependencies[dependencyName][dependencyVersion] = [];
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          if (!versionDependencies[dependencyName][dependencyVersion as any]) {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            (versionDependencies[dependencyName] as any)[
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              dependencyVersion as any
+            ] = [];
           }
 
-          versionDependencies[dependencyName][dependencyVersion].push(
-            packageName
-          );
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          (
+            versionDependencies[dependencyName][
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              dependencyVersion as any
+            ] as unknown as string[]
+          ).push(packageName);
         }
       };
 
@@ -435,7 +445,11 @@ const refreshPackages = async ({ forceUpdate }: { forceUpdate: boolean }) => {
             `Version mismatch detected for dependency ${dependencyName}.`
           );
           for (const version of Object.keys(dependencyVersions)) {
-            const sourcePackages = dependencyVersions[version];
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const sourcePackages = dependencyVersions[
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              version as any
+            ] as unknown as string[];
             consola.warn(
               `Version ${version} is used by the following package(s): ${sourcePackages.join(
                 ', '
