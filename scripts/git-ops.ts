@@ -350,6 +350,36 @@ const refreshPackages = async ({ forceUpdate }: { forceUpdate: boolean }) => {
           [version: string]: string[];
         }[];
       } = {};
+      const addDependencies = (
+        packageName: string,
+        dependencies: { [key: string]: string }
+      ) => {
+        for (const dependencyName of Object.keys(dependencies)) {
+          // We only care about @kiingo packages
+          if (!dependencyName.startsWith('@kiingo/')) {
+            continue;
+          }
+
+          const dependencyVersion = dependencies[dependencyName];
+          if (!versionDependencies[dependencyName]) {
+            versionDependencies[dependencyName] = [];
+          }
+          if (!versionDependencies[dependencyName][dependencyVersion]) {
+            versionDependencies[dependencyName][dependencyVersion] = [];
+          }
+
+          versionDependencies[dependencyName][dependencyVersion].push(
+            packageName
+          );
+        }
+      };
+
+      // Add in this package as one whose dependencies we will also consider
+      addDependencies(packageJson.name, {
+        ...packageJson.dependencies,
+        ...packageJson.devDependencies
+      });
+
       for (const p of packages) {
         const packageName = p.name;
         const version = p.version;
@@ -376,11 +406,6 @@ const refreshPackages = async ({ forceUpdate }: { forceUpdate: boolean }) => {
                   value = value.substring(1);
                 }
 
-                // We only care about @kiingo packages
-                if (!key.startsWith('@kiingo/')) {
-                  continue;
-                }
-
                 obj[key] = value;
               }
 
@@ -390,19 +415,8 @@ const refreshPackages = async ({ forceUpdate }: { forceUpdate: boolean }) => {
             const dependencies = parseDependencyString(stdout) as {
               [key: string]: string;
             };
-            for (const dependencyName of Object.keys(dependencies)) {
-              const dependencyVersion = dependencies[dependencyName];
-              if (!versionDependencies[dependencyName]) {
-                versionDependencies[dependencyName] = [];
-              }
-              if (!versionDependencies[dependencyName][dependencyVersion]) {
-                versionDependencies[dependencyName][dependencyVersion] = [];
-              }
 
-              versionDependencies[dependencyName][dependencyVersion].push(
-                packageName
-              );
-            }
+            addDependencies(packageName, dependencies);
           }
         });
       }
