@@ -179,6 +179,7 @@ const refreshPackages = async ({ forceUpdate }: { forceUpdate: boolean }) => {
   // Use fs to find the package.json file
   consola.log(`Reading directory...`);
   const files = fs.readdirSync('./');
+  const successMessages: string[] = [];
   for (const file of files) {
     if (file === 'package.json') {
       consola.log(`Found package.json file: ${file}`);
@@ -251,6 +252,9 @@ const refreshPackages = async ({ forceUpdate }: { forceUpdate: boolean }) => {
               });
 
               consola.log(`Re-adding package: ${key}@${targetVersion}`);
+              successMessages.push(
+                `Updated ${key} from ${currentVersion} to ${targetVersion}.`
+              );
               await runCommand(`yarn add ${key}@${targetVersion}`, {
                 shouldThrowError: false
               });
@@ -263,6 +267,9 @@ const refreshPackages = async ({ forceUpdate }: { forceUpdate: boolean }) => {
         }
       }
     }
+  }
+  for (const message of successMessages) {
+    consola.success(message);
   }
 };
 
