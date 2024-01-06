@@ -3,19 +3,45 @@ import { exec } from 'child_process';
 import { promisify } from 'util';
 import consola from 'consola';
 import prompts from 'prompts';
+import fs from 'fs';
 
 const execAsync = promisify(exec);
 
-const runCommand = async (command: string) => {
+const runCommand = async (
+  command: string,
+  options?: {
+    onError?: (error: Error) => void;
+    onStdOut?: (stdout: string) => void;
+    shouldThrowError?: boolean | ((error: Error) => boolean);
+  }
+): Promise<boolean> => {
+  if (!options) {
+    options = {};
+  }
   try {
     const { stdout, stderr } = await execAsync(command);
-    consola.log(stdout);
+    if (options.onStdOut) {
+      options.onStdOut(stdout);
+    } else {
+      consola.log(stdout);
+    }
+
     if (stderr?.length) {
       consola.info(`StdErr: ${stderr}`);
     }
+    return true;
   } catch (error) {
     consola.error(`Error executing command: ${error}`);
-    throw error;
+    options.onError?.(error);
+
+    if (
+      options.shouldThrowError === true ||
+      (typeof options.shouldThrowError === 'function' &&
+        options.shouldThrowError(error))
+    ) {
+      throw error;
+    }
+    return false;
   }
 };
 
@@ -149,6 +175,90 @@ const commitRebasePush = async (commitMessage: string): Promise<boolean> => {
   return true;
 };
 
+const refreshPackages = async ({ forceUpdate }: { forceUpdate: boolean }) => {
+  // Use fs to find the package.json file
+  consola.log(`Reading directory...`);
+  const files = fs.readdirSync('./');
+  for (const file of files) {
+    if (file === 'package.json') {
+      consola.log(`Found package.json file: ${file}`);
+      // Read package.json
+      const data = fs.readFileSync(`./${file}`, 'utf8');
+      const packageJson = JSON.parse(data);
+
+      // Iterate through dependencies
+      for (const key of Object.keys(packageJson.dependencies)) {
+        if (key.startsWith('@kiingo/')) {
+          const currentVersion = packageJson.dependencies[key];
+          consola.log(`Found Kiingo package: ${key}`);
+
+          let targetVersion = '';
+          await runCommand(`yarn info ${key}`, {
+            onStdOut: (stdout) => {
+              //consola.success(`${stdout}`);
+              const getLastVersion = (str: string): string | null => {
+                // Regular expression to match the versions array and capture the last version
+                const regex =
+                  /versions:\s*\[\s*(?:'[^']+',\s*)*?'([^']+)'\s*\]/;
+
+                // Execute the regex
+                const matches = regex.exec(str);
+
+                // If a match is found, return the captured group (last version)
+                if (matches && matches[1]) {
+                  return matches[1];
+                }
+
+                // Return null if no match is found
+                return null;
+              };
+
+              // Find the latest version
+              const targetVersionMaybe = getLastVersion(stdout);
+              if (targetVersionMaybe) {
+                // Use this version
+                targetVersion = targetVersionMaybe;
+              } else {
+                throw new Error(`No versions found for package ${key}.`);
+              }
+            },
+            shouldThrowError: false
+          });
+
+          if (targetVersion?.length) {
+            if (forceUpdate || targetVersion !== currentVersion) {
+              if (forceUpdate) {
+                consola.log(
+                  `Force updating package: ${key} to ${targetVersion}...`
+                );
+              } else {
+                consola.log(
+                  `${key} is on version ${currentVersion}. Updating to ${targetVersion}...`
+                );
+              }
+
+              consola.log(`Uninstalling package: ${key}`);
+              // Uninstall package using yarn
+              await runCommand(`yarn remove ${key}`, {
+                shouldThrowError: false
+              });
+
+              consola.log(`Re-adding package: ${key}@${targetVersion}`);
+              await runCommand(`yarn add ${key}@${targetVersion}`, {
+                shouldThrowError: false
+              });
+            } else {
+              consola.success(`${key} is already on version ${targetVersion}.`);
+            }
+          } else {
+            consola.warn(`No target version found for ${key}.`);
+          }
+        }
+      }
+    }
+  }
+};
+
 const main = async () => {
   try {
     const commandType = process.argv[2];
@@ -174,6 +284,14 @@ const main = async () => {
       await listStagedFiles();
     } else if (commandType === 'list-unstaged') {
       await listUnstagedFiles();
+    } else if (commandType === 'refresh-packages') {
+      await refreshPackages({
+        forceUpdate: false
+      });
+    } else if (commandType === 'refresh-packages-force') {
+      await refreshPackages({
+        forceUpdate: true
+      });
     } else {
       consola.error('Invalid command type.');
     }

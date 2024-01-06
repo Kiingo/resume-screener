@@ -66,7 +66,9 @@
     "git:push": "yarn run git:command push",
     "git:rebase": "yarn run git:pull:rebase",
     "git:rebase:push": "yarn run git:command rebase-push",
-    "git:publish": "yarn run lint && yarn run build:prod && yarn run test && yarn run prettier-check && yarn run git:commit:push "
+    "git:publish": "yarn run lint && yarn run build:prod && yarn run test && yarn run prettier-check && yarn run git:commit:push ",
+    "refresh-packages": "yarn run git:command refresh-packages",
+    "refresh-packages:force": "yarn run git:command refresh-packages-force"
   },
   "peerDependencies": {},
   "husky": {
