@@ -1,3 +1,8 @@
+/**
+ * Version: 1.0.10
+ * Date: 09-05-2024
+ */
+
 /* eslint-disable no-console */
 import { exec } from 'child_process';
 import consola from 'consola';
@@ -12,6 +17,7 @@ const runCommand = async (
   options?: {
     onError?: (error: Error) => void;
     onStdOut?: (stdout: string) => void;
+    onStdErr?: (stderr: string) => void;
     shouldThrowError?: boolean | ((error: Error) => boolean);
   }
 ): Promise<boolean> => {
@@ -28,12 +34,17 @@ const runCommand = async (
 
     if (stderr?.length) {
       consola.info(`StdErr: ${stderr}`);
+      if (options.onStdErr) {
+        options.onStdErr(stderr);
+      }
     }
     return true;
   } catch (e) {
     const error = e as Error;
     consola.error(`Error executing command: ${error}`);
-    options.onError?.(error);
+    if (options.onError) {
+      options.onError(error);
+    }
 
     if (
       options.shouldThrowError === true ||
@@ -144,35 +155,114 @@ const commit = async (commitMessage: string): Promise<boolean> => {
 
   return true;
 };
-const pullMerge = async () => {
+const pullMergeWithMergeCommit = async (): Promise<boolean> => {
   consola.log('Pulling latest changes from remote...');
-  await runCommand('git pull');
-  consola.success(`Successfully pulled latest changes from remote.`);
+  let didSucceed = true;
+  // --no-ff means don't fast-forward merge
+  // this ensures we create a merge commit explicitly
+  await runCommand('git pull --no-ff --no-rebase', {
+    onStdErr: (stderr) => {
+      consola.info(`Error upon git pull --no-ff --no-rebase`);
+      if (stderr.includes(`From https://github.com/Kiingo/`)) {
+        consola.info(`${stderr}`);
+        consola.warn(`We won't consider this an error at this time.`);
+      } else {
+        consola.error(stderr);
+        didSucceed = false;
+      }
+    },
+    onError: (error) => {
+      consola.error(`Error pulling latest changes from remote: ${error}`);
+      didSucceed = false;
+    }
+  });
+  if (didSucceed) {
+    consola.success(`Successfully pulled latest changes from remote.`);
+  }
+  return didSucceed;
 };
-const pullRebase = async () => {
+const pullRebase = async (): Promise<boolean> => {
   consola.log('Pulling latest changes from remote...');
-  await runCommand('git pull --rebase');
-  consola.success(`Successfully pulled latest changes from remote.`);
+  let didSucceed = true;
+  await runCommand('git pull --rebase', {
+    onStdErr: (stderr) => {
+      consola.info(`Error upon git pull --rebase`);
+      if (stderr.includes(`From https://github.com/Kiingo/`)) {
+        consola.info(`${stderr}`);
+        consola.warn(`We won't consider this an error at this time.`);
+      } else {
+        consola.error(stderr);
+        didSucceed = false;
+      }
+    },
+    onError: (error) => {
+      consola.error(`Error pulling latest changes from remote: ${error}`);
+      didSucceed = false;
+    }
+  });
+  if (didSucceed) {
+    consola.success(`Successfully pulled latest changes from remote.`);
+  }
+  return didSucceed;
 };
-const push = async () => {
+const push = async (): Promise<boolean> => {
   consola.log('Pushing local changes to remote...');
-  await runCommand('git push');
-  consola.success(`Successfully pushed local changes to remote.`);
+  let didSucceed = true;
+  await runCommand('git push', {
+    onStdErr: (stderr) => {
+      consola.info(`Error upon git push`);
+      if (stderr.includes(`Bypassed rule violations`)) {
+        consola.warn(
+          `Bypassed rule violations. We won't consider this an error at this time.`
+        );
+      } else {
+        consola.error(stderr);
+        didSucceed = false;
+      }
+    },
+    onError: (error) => {
+      consola.error(`Error pushing local changes to remote: ${error}`);
+      didSucceed = false;
+    }
+  });
+  if (didSucceed) {
+    consola.success(`Successfully pushed local changes to remote.`);
+  }
+  return didSucceed;
 };
-const rebasePush = async () => {
-  await pullRebase();
-  await push();
+const rebasePush = async (): Promise<boolean> => {
+  const didPullRebase = await pullRebase();
+  if (!didPullRebase) {
+    return false;
+  }
+  const didPush = await push();
+  if (!didPush) {
+    return false;
+  }
+  return true;
 };
 
 const commitRebasePush = async (commitMessage: string): Promise<boolean> => {
+  // commit
   const didCommit = await commit(commitMessage);
   if (!didCommit) {
     return false;
   }
 
-  await pullRebase();
+  // Then pull and try to merge (with --no-ff to create a merge commit)
+  const didPullMerge = await pullMergeWithMergeCommit();
+  if (!didPullMerge) {
+    return false;
+  }
 
-  await push();
+  // // Then rebase and push
+  // if (!(await pullRebase())) {
+  //   return false;
+  // }
+
+  if (!(await push())) {
+    return false;
+  }
   return true;
 };
 
@@ -222,17 +312,47 @@ const refreshPackages = async ({ forceUpdate }: { forceUpdate: boolean }) => {
         const packageName = p.name;
         const isDev = p.isDev;
         let currentVersion = p.version;
+
+        // Check for the version that's actually installed
+        let installedVersion = '';
+        try {
+          const packageJsonPath = `./node_modules/${packageName}/package.json`;
+          const packageData = fs.readFileSync(packageJsonPath, 'utf8');
+          const packageJson = JSON.parse(packageData);
+          installedVersion = packageJson.version;
+        } catch (e) {
+          const erorr = e as Error;
+          consola.warn(
+            `Could not read installed version for ${packageName}: ${erorr}`
+          );
+          // If we can't read the installed version, assume it needs to be updated
+          installedVersion = '0.0.0';
+        }
+
         // Remove any leading ^ or ~
         if (currentVersion.startsWith('^') || currentVersion.startsWith('~')) {
           currentVersion = currentVersion.substring(1);
         }
         p.dependenciesArray[packageName] = currentVersion;
         consola.log(`Found Kiingo package: ${packageName}`);
+        consola.log(`Installed version: ${installedVersion}`);
 
+        if (currentVersion !== installedVersion) {
+          consola.log(`Version in package.json: ${currentVersion}`);
+          consola.warn(
+            `Version in package.json and installed version do not match. This can happen when package.json has been updated externally but node_modules has not been updated.`
+          );
+        }
+
+        // Get the version of the package from NPM
         let targetVersion = '';
         await runCommand(`yarn info ${packageName}`, {
           onStdOut: (stdout) => {
-            //consola.success(`${stdout}`);
+            if (!stdout) {
+              throw new Error(
+                `No stdout found for ${packageName}. YOUR NPM TOKEN MAY BE INVALID.`
+              );
+            }
             const getLastVersion = (str: string): string | null => {
               // Regular expression to match the versions array and capture the last version
               const regex = /versions:\s*\[\s*(?:'[^']+',\s*)*?'([^']+)'\s*\]/;
@@ -286,14 +406,14 @@ const refreshPackages = async ({ forceUpdate }: { forceUpdate: boolean }) => {
         });
 
         if (targetVersion?.length) {
-          if (forceUpdate || targetVersion !== currentVersion) {
+          if (forceUpdate || targetVersion !== installedVersion) {
             if (forceUpdate) {
               consola.log(
                 `Force updating package: ${packageName} to ${targetVersion}...`
               );
             } else {
               consola.log(
-                `${packageName} is on version ${currentVersion}. Updating to ${targetVersion}...`
+                `${packageName} installed version ${installedVersion} differs from latest ${targetVersion}. Updating...`
               );
             }
 
@@ -334,7 +454,7 @@ const refreshPackages = async ({ forceUpdate }: { forceUpdate: boolean }) => {
             );
           }
         } else {
-          consola.warn(`No target version found for ${packageName}.`);
+          consola.error(`No target version found for ${packageName}.`);
         }
       }
 
@@ -365,22 +485,19 @@ const refreshPackages = async ({ forceUpdate }: { forceUpdate: boolean }) => {
           if (!versionDependencies[dependencyName]) {
             versionDependencies[dependencyName] = [];
           }
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          if (!versionDependencies[dependencyName][dependencyVersion as any]) {
+          if (
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            (versionDependencies[dependencyName] as any)[
-              // eslint-disable-next-line @typescript-eslint/no-explicit-any
-              dependencyVersion as any
-            ] = [];
+            !(versionDependencies[dependencyName] as any)[dependencyVersion]
+          ) {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            (versionDependencies[dependencyName] as any)[dependencyVersion] =
+              [];
           }
 
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          (
-            versionDependencies[dependencyName][
-              // eslint-disable-next-line @typescript-eslint/no-explicit-any
-              dependencyVersion as any
-            ] as unknown as string[]
-          ).push(packageName);
+          (versionDependencies[dependencyName] as any)[dependencyVersion].push(
+            packageName
+          );
         }
       };
 
@@ -446,10 +563,7 @@ const refreshPackages = async ({ forceUpdate }: { forceUpdate: boolean }) => {
           );
           for (const version of Object.keys(dependencyVersions)) {
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            const sourcePackages = dependencyVersions[
-              // eslint-disable-next-line @typescript-eslint/no-explicit-any
-              version as any
-            ] as unknown as string[];
+            const sourcePackages = (dependencyVersions as any)[version];
             consola.warn(
               `Version ${version} is used by the following package(s): ${sourcePackages.join(
                 ', '
@@ -468,10 +582,27 @@ const refreshPackages = async ({ forceUpdate }: { forceUpdate: boolean }) => {
   }
 };
 
+const initialize = async () => {
+  // Run `node -v` and compare version to what's in `.nvmrc`
+  const { stdout } = await execAsync('node -v');
+  const nodeVersion = stdout.trim().replace(/^v/, '');
+  const nvmrcVersion = fs
+    .readFileSync('.nvmrc', 'utf8')
+    .trim()
+    .replace(/^v/, '');
+  if (nodeVersion !== nvmrcVersion) {
+    throw new Error(
+      `Node version mismatch. Expected ${nvmrcVersion}, got ${nodeVersion}. Run \`nvm use\` to switch to the correct version.`
+    );
+  }
+};
+
 const main = async () => {
   try {
     const commandType = process.argv[2];
     const commitMessage = process.argv[3];
+
+    await initialize();
 
     if (commandType === 'commit-rebase-push') {
       await commitRebasePush(commitMessage);
@@ -482,7 +613,7 @@ const main = async () => {
     } else if (commandType === 'unstage') {
       await unstage();
     } else if (commandType === 'pull') {
-      await pullMerge();
+      await pullMergeWithMergeCommit();
     } else if (commandType === 'pull-rebase') {
       await pullRebase();
     } else if (commandType === 'rebase-push') {

@@ -10,11 +10,24 @@ jobs:
   build-and-publish:
     name: Build, lint, test, and deploy npm package on ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
+    if: ${{ github.event.commits == null || github.event.commits[0].author.name != 'GitHub Action' }}
     strategy:
       matrix:
         os: [ubuntu-latest]
 
     steps:
+      - name: Check commit message for version pattern
+        id: check_message
+        run: |
+          if [[ "${{ github.event.head_commit.message }}" =~ ^v[0-9]+\.[0-9]+\.[0-9]+ ]] || [[ "${{ github.event.head_commit.message }}" =~ \[do-not-build\] ]]; then
+            echo "Commit message matches version pattern or contains [do-not-build]. Aborting."
+            echo "::set-output name=skip::true"
+            exit 1
+          else
+            echo "Commit message does not match version pattern and does not contain [do-not-build]."
+            echo "::set-output name=skip::false"
+          fi
+
       - name: Check if NPM_AUTH_TOKEN is set
         env:
           NPM_AUTH_TOKEN: ${{ secrets.NPM_AUTH_TOKEN }}
@@ -26,8 +39,18 @@ jobs:
             echo "NPM_AUTH_TOKEN is set";
           fi
 
+      - name: Create GitHub App Token
+        uses: actions/create-github-app-token@v1
+        id: app-token
+        with:
+          app-id: ${{ vars.VERSION_BUMPER_APP_ID }}
+          private-key: ${{ secrets.VERSION_BUMPER_SECRET }}
+
       - name: Checkout code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ steps.app-token.outputs.token }}
 
       - name: Install jq
         run: sudo apt-get update && sudo apt-get install -y jq
@@ -86,7 +109,7 @@ jobs:
       - name: Stage Files and Commit changes
         run: |
           git add package.json || true
-          git commit -m "Bump package version" || true
+          git commit -m "Bump package version [do-not-build]" || true
 
       - name: Check and Create Tag
         run: |
@@ -102,15 +125,16 @@ jobs:
       - name: Push changes
         run: |
           branch_name="${GITHUB_REF#refs/heads/}" # Extract branch name from reference
-          git push origin $branch_name
+          git remote set-url origin https://x-access-token:${{ steps.app-token.outputs.token }}@github.com/${{ github.repository }}.git
+          git push --force origin $branch_name
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ steps.app-token.outputs.token }}
 
       - name: Set npm tag
         id: set_tag
         run: |
-          if [[ "${{ github.ref }}" == "refs/heads/development" ]]; then
-            echo "::set-output name=TAG::--tag development"
+          if [[ "${{ github.ref }}" == "refs/heads/develop" ]]; then
+            echo "::set-output name=TAG::--tag develop"
           elif [[ "${{ github.ref }}" == "refs/heads/stage" ]]; then
             echo "::set-output name=TAG::--tag stage"
           else
@@ -127,7 +151,7 @@ jobs:
 
       - name: Upload yarn-error.log
         if: failure() # This ensures the step is executed only if a previous step failed
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v4
         with:
           name: yarn-error-log
           path: ${{ github.workspace }}/yarn-error.log
