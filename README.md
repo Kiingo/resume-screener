@@ -1,11 +1,15 @@
-# Typescript Boilerplate
+### Resume Analyzer
 
-First update `package.json` (particularly with the name of the package).
-Add `.nmprc`
-Add `NPM_AUTH_TOKEN` to GitHub Repo secrets
-Install any dependencies.
+# Run the project
+Make sure you have Node.js and npm installed.
 
-## Compile-time Type Errors
+1. Navigate to the project directory:
+Example: (C:\Users\[user]\resume-analyzer\front-end)
 
-If you can't get things to work, run "yarn run relink-kiingo-packages"
-Then run "Typescript: Restart TS Server" in VSCode.
+2. run `npm install` to install the dependencies.
+
+3. Create a .env file in the root directory and add the following variables:
+REACT_APP_OPENAI_API_KEY='[API KEY GOES HERE]'
+
+'Usage: npm start -- <directory_path> <output_path> <job_description> <openai_api_key>'
+'Example: npm start -- ./resumes ./output.csv "Software Engineer" sk-your-api-key'
