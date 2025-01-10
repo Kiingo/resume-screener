@@ -11,7 +11,8 @@ import { PDFExtractResult } from 'pdf.js-extract';
 
 interface ResumeAnalysis {
   fileName: string;
-  reasoning: string[];
+  reasoningGoodFit: string[];
+  reasoningBadFit: string[];
   matchScore: number;
   keyMatches: string[];
   consMissingSkills: string[];
@@ -20,24 +21,29 @@ interface ResumeAnalysis {
 
 // Validation schemas
 const JobFitSchema = z.object({
-  matchScore: z.number(),
-  reasoning: z.array(z.string()),
+  reasoningGoodFit: z.array(z.string()),
+  reasoningBadFit: z.array(z.string()),
   keyMatches: z.array(z.string()),
   consMissingSkills: z.array(z.string()),
-  recommendations: z.array(z.string())
+  recommendations: z.array(z.string()),
+  matchScore: z.number(),
 });
 
 const TechnicalSkillsSchema = z.object({
   programmingLanguages: z.array(z.string()),
   frameworks: z.array(z.string()),
-  technicalProficiency: z.number(),
-  technicalGaps: z.array(z.string())
+  technicalGaps: z.array(z.string()),
+  reasoningGoodFitTechnical: z.array(z.string()),
+  reasoningBadFitTechnical: z.array(z.string()),
+  technicalProficiencyScore: z.number(),
 });
 
 const SoftSkillsSchema = z.object({
   communicationSkills: z.array(z.string()),
   leadershipTraits: z.array(z.string()),
   teamworkIndicators: z.array(z.string()),
+  reasoningGoodFitSoftSkills: z.array(z.string()),
+  reasoningBadFitSoftSkills: z.array(z.string()),
   softSkillScore: z.number()
 });
 
@@ -45,6 +51,8 @@ const ExperienceAnalysisSchema = z.object({
   yearsOfExperience: z.number(),
   relevantProjects: z.array(z.string()),
   industryExpertise: z.array(z.string()),
+  reasoningGoodFitExperience: z.array(z.string()),
+  reasoningBadFitExperience: z.array(z.string()),
   experienceScore: z.number()
 });
 
@@ -55,7 +63,9 @@ const analysisTypes = [
     schema: TechnicalSkillsSchema,
     systemPrompt: `You are a technical recruiter specializing in evaluating technical skills. 
                 Focus on concrete technical abilities, programming languages, and frameworks.
-                For any numerical scores, use a scale of 1-10 where 1 is lowest and 10 is highest.
+                Give a reason on why this resume's technical background is a good fit for the job description.
+                Give a reason on why this resume's technical background is a bad fit for the job description.
+                Then use a scale of 1-10 where 1 is lowest and 10 is highest to score the technical fit.
                 Do not fabricate information from the resume.`,
     userPrompt: (text: string) => `Analyze the technical skills in this resume:\n\n${text}`
   },
@@ -63,7 +73,9 @@ const analysisTypes = [
     type: 'soft_skills',
     schema: SoftSkillsSchema,
     systemPrompt: `You are a behavioral interview specialist focusing on soft skills and interpersonal abilities.
-                For any numerical scores, use a scale of 1-10 where 1 is lowest and 10 is highest.
+                Give a reason on why this resume's soft skills are a good fit for the job description.
+                Give a reason on why this resume's soft skills are a bad fit for the job description.
+                Then use a scale of 1-10 where 1 is lowest and 10 is highest to score the soft skills fit.
                 Do not fabricate information from the resume.`,
     userPrompt: (text: string) => `Evaluate the soft skills and interpersonal abilities shown in this resume:\n\n${text}`
   },
@@ -71,7 +83,9 @@ const analysisTypes = [
     type: 'experience',
     schema: ExperienceAnalysisSchema,
     systemPrompt: `You are an industry expert focusing on evaluating professional experience and project history.
-                For any numerical scores, use a scale of 1-10 where 1 is lowest and 10 is highest.
+                Give a reason on why this resume's experience is a good fit for the job description.
+                Give a reason on why this resume's experience is a bad fit for the job description.
+                Then use a scale of 1-10 where 1 is lowest and 10 is highest to score the experience fit.
                 Do not fabricate information from the resume.`,
     userPrompt: (text: string) => `Analyze the professional experience and project history in this resume:\n\n${text}`
   }
@@ -142,9 +156,11 @@ export class ResumeAnalyzer {
       messages: [
         {
           role: "system",
-          content: `Analyze how well a resume matches a job description. Give a reason on why the resume is a good or bad fit. 
-                    Then score from 1-10. 
+          content: `Analyze how well a resume matches a job description. 
                     Focus on required skills, experience, and qualifications. 
+                    Based on the resume, why would this candidate be a good fit for this job description. 
+                    Based on the resume, why would this candidate be a bad fit for this job description.
+                    Then score from 1-10. 
                     Do not fabricate information from the resume.`
         },
         {
@@ -195,7 +211,8 @@ export class ResumeAnalyzer {
       fileName: filename,
       matchScore: fitAnalysis.matchScore,
       keyMatches: fitAnalysis.keyMatches,
-      reasoning: fitAnalysis.reasoning,
+      reasoningGoodFit: fitAnalysis.reasoningGoodFit,
+      reasoningBadFit: fitAnalysis.reasoningBadFit,
       consMissingSkills: fitAnalysis.consMissingSkills,
       recommendations: fitAnalysis.recommendations,
       ...this.flattenResults(results)
