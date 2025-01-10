@@ -136,6 +136,7 @@
   "dependencies": {
     "@types/xlsx": "^0.0.36",
     "cra-template-typescript": "1.2.0",
+    "dotenv": "^16.4.7",
     "lodash": "^4.17.21",
     "lucide-react": "^0.469.0",
     "mammoth": "^1.9.0",

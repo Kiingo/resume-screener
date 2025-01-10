@@ -11,17 +11,19 @@ import { PDFExtractResult } from 'pdf.js-extract';
 
 interface ResumeAnalysis {
   fileName: string;
+  reasoning: string[];
   matchScore: number;
   keyMatches: string[];
-  desiredSkills: string[];
+  consMissingSkills: string[];
   recommendations: string[];
 }
 
 // Validation schemas
 const JobFitSchema = z.object({
   matchScore: z.number(),
+  reasoning: z.array(z.string()),
   keyMatches: z.array(z.string()),
-  desiredSkills: z.array(z.string()),
+  consMissingSkills: z.array(z.string()),
   recommendations: z.array(z.string())
 });
 
@@ -140,9 +142,10 @@ export class ResumeAnalyzer {
       messages: [
         {
           role: "system",
-          content: `Analyze how well a resume matches a job description. Score from 1-10. 
-                   Focus on required skills, experience, and qualifications. 
-                   Do not fabricate information from the resume.`
+          content: `Analyze how well a resume matches a job description. Give a reason on why the resume is a good or bad fit. 
+                    Then score from 1-10. 
+                    Focus on required skills, experience, and qualifications. 
+                    Do not fabricate information from the resume.`
         },
         {
           role: "user",
@@ -192,7 +195,8 @@ export class ResumeAnalyzer {
       fileName: filename,
       matchScore: fitAnalysis.matchScore,
       keyMatches: fitAnalysis.keyMatches,
-      desiredSkills: fitAnalysis.desiredSkills,
+      reasoning: fitAnalysis.reasoning,
+      consMissingSkills: fitAnalysis.consMissingSkills,
       recommendations: fitAnalysis.recommendations,
       ...this.flattenResults(results)
     };
@@ -274,25 +278,3 @@ export class ResumeAnalyzer {
     }
   }
 }
-
-// Command-line interface
-// async function main() {
-//   // Get arguments, skipping the first two (node and script path)
-//   const args = process.argv.slice(2);
-  
-//   if (args.length < 4) {
-//       console.log('Usage: npm start -- <directory_path> <output_path> <job_description> <openai_api_key>');
-//       console.log('Example: npm start -- ./resumes ./output.csv "Software Engineer" sk-your-api-key');
-//       process.exit(1);
-//   }
-
-//   const [dirPath, outputPath, jobDescription, apiKey] = args;
-
-//   try {
-//       const analyzer = new ResumeAnalyzer(apiKey, jobDescription);
-//       await analyzer.analyzeDirectory(dirPath, outputPath);
-//   } catch (error) {
-//       console.error('Error:', error);
-//       process.exit(1);
-//   }
-// }
