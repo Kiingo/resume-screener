@@ -61,32 +61,32 @@ const analysisTypes = [
   {
     type: 'technical',
     schema: TechnicalSkillsSchema,
-    systemPrompt: `You are a technical recruiter specializing in evaluating technical skills. 
-                Focus on concrete technical abilities, programming languages, and frameworks.
-                Give a reason on why this resume's technical background is a good fit for the job description.
-                Give a reason on why this resume's technical background is a bad fit for the job description.
-                Then use a scale of 1-10 where 1 is lowest and 10 is highest to score the technical fit.
-                Do not fabricate information from the resume.`,
+    systemPrompt: `You are a technical recruiter specializing in evaluating technical skills.
+- Focus on concrete technical abilities, programming languages, and frameworks.
+- Give a reason on why this resume's technical background is a good fit for the job description.
+- Give a reason on why this resume's technical background is a bad fit for the job description.
+- Then use a scale of 1-10 where 1 is lowest and 10 is highest to score the technical fit.
+- Do not fabricate information from the resume.`,
     userPrompt: (text: string) => `Analyze the technical skills in this resume:\n\n${text}`
   },
   {
     type: 'soft_skills',
     schema: SoftSkillsSchema,
     systemPrompt: `You are a behavioral interview specialist focusing on soft skills and interpersonal abilities.
-                Give a reason on why this resume's soft skills are a good fit for the job description.
-                Give a reason on why this resume's soft skills are a bad fit for the job description.
-                Then use a scale of 1-10 where 1 is lowest and 10 is highest to score the soft skills fit.
-                Do not fabricate information from the resume.`,
+- Give a reason on why this resume's soft skills are a good fit for the job description.
+- Give a reason on why this resume's soft skills are a bad fit for the job description.
+- Then use a scale of 1-10 where 1 is lowest and 10 is highest to score the soft skills fit.
+- Do not fabricate information from the resume.`,
     userPrompt: (text: string) => `Evaluate the soft skills and interpersonal abilities shown in this resume:\n\n${text}`
   },
   {
     type: 'experience',
     schema: ExperienceAnalysisSchema,
     systemPrompt: `You are an industry expert focusing on evaluating professional experience and project history.
-                Give a reason on why this resume's experience is a good fit for the job description.
-                Give a reason on why this resume's experience is a bad fit for the job description.
-                Then use a scale of 1-10 where 1 is lowest and 10 is highest to score the experience fit.
-                Do not fabricate information from the resume.`,
+-  Give a reason on why this resume's experience is a good fit for the job description.
+- Give a reason on why this resume's experience is a bad fit for the job description.
+- Then use a scale of 1-10 where 1 is lowest and 10 is highest to score the experience fit.
+- Do not fabricate information from the resume.`,
     userPrompt: (text: string) => `Analyze the professional experience and project history in this resume:\n\n${text}`
   }
 ] as const;
@@ -103,7 +103,7 @@ export class ResumeAnalyzer {
     this.jobDescription = jobDescription;
   }
 
-  public static async extractFromSinglePDF(filePath: string): Promise<{filename: string; text: string}> {
+  public static async extractFromSinglePDF(filePath: string): Promise<{ filename: string; text: string }> {
     try {
       const pdfExtract = new PDFExtract();
       const options: PDFExtractOptions = {};
@@ -118,8 +118,8 @@ export class ResumeAnalyzer {
         for (const textContent of page.content) {
           let separator =
             pageText === '' ||
-            textContent.str.startsWith(' ') ||
-            pageText.endsWith(' ')
+              textContent.str.startsWith(' ') ||
+              pageText.endsWith(' ')
               ? ''
               : ' ';
           if (previousY && lineHeight) {
@@ -157,11 +157,11 @@ export class ResumeAnalyzer {
         {
           role: "system",
           content: `Analyze how well a resume matches a job description. 
-                    Focus on required skills, experience, and qualifications. 
-                    Based on the resume, why would this candidate be a good fit for this job description. 
-                    Based on the resume, why would this candidate be a bad fit for this job description.
-                    Then score from 1-10. 
-                    Do not fabricate information from the resume.`
+-  Focus on required skills, experience, and qualifications. 
+- Based on the resume, why would this candidate be a good fit for this job description. 
+- Based on the resume, why would this candidate be a bad fit for this job description.
+- Then score from 1-10. 
+- Do not fabricate information from the resume.`
         },
         {
           role: "user",
@@ -242,9 +242,9 @@ export class ResumeAnalyzer {
     const allKeys = ['fileName', ...new Set(
       results.flatMap(result => Object.keys(result))
     )].filter(key => key !== 'fileName');
-    
+
     const columnOrder = ['fileName', ...allKeys.sort()];
-    
+
     return Papa.unparse(results, {
       quotes: true,
       header: true,
@@ -261,7 +261,7 @@ export class ResumeAnalyzer {
     try {
       // Verify directory exists
       await fs.access(dirPath);
-      
+
       // Read all files in the directory
       const files = await fs.readdir(dirPath);
       const pdfFiles = files.filter(file => path.extname(file).toLowerCase() === '.pdf');
@@ -277,9 +277,9 @@ export class ResumeAnalyzer {
       for (const file of pdfFiles) {
         const filePath = path.join(dirPath, file);
         console.log(`Processing ${file}...`);
-        
+
         const extractResult = await ResumeAnalyzer.extractFromSinglePDF(filePath);
-        
+
         const analysis = await this.analyzeResume(extractResult.text, file);
         results.push(analysis);
         console.log(`Completed analysis of ${file}`);
